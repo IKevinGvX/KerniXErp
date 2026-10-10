@@ -21,3 +21,8 @@ node_modules/
 .env.*
 **/appsettings.Development.json
 **/appsettings.Production.json
+.vs/
+bin/
+obj/
+*.user
+*.suo

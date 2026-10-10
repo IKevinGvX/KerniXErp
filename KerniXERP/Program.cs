@@ -571,7 +571,14 @@ app.UseGlobalExceptionMiddleware();
 
 app.UseSerilogRequestLogging();
 
-if (app.Environment.IsDevelopment())
+// Swagger esta activo automaticamente en Development.
+// En Azure Production solo se habilita si Swagger__Enabled=true.
+// Deshabilitar Swagger__Enabled una vez terminadas las pruebas.
+var swaggerHabilitado =
+    app.Environment.IsDevelopment() ||
+    app.Configuration.GetValue<bool>("Swagger:Enabled");
+
+if (swaggerHabilitado)
 {
     app.UseSwagger();
 
@@ -581,10 +588,13 @@ if (app.Environment.IsDevelopment())
             "/swagger/v1/swagger.json",
             "KerniX ERP API v1");
 
+        options.RoutePrefix = "swagger";
+
         options.DocumentTitle =
             "KerniX ERP - Documentación API";
 
         options.DisplayRequestDuration();
+        options.DefaultModelsExpandDepth(-1);
     });
 }
 
