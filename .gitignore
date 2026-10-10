@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+*.vsidx
+*.user
+*.suo
+
+# .NET
+**/bin/
+**/obj/
+TestResults/
+
+# Dependencias
+node_modules/
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Configuraciones sensibles
+.env
+.env.*
+**/appsettings.Development.json
+**/appsettings.Production.json

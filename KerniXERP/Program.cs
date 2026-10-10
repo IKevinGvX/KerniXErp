@@ -26,9 +26,6 @@ using KernixERP.Services.Inventario;
 using KernixERP.Services.Organizacion;
 using KernixERP.Services.Seguridad;
 using KernixERP.Services.Ventas;
-using KernixERP.Interfaces.IA;
-using KernixERP.Repositories.IA;
-using KernixERP.Services.IA;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -93,6 +90,18 @@ builder.Services.AddScoped<
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
+
+// ==========================================================
+// CONEXION SQL - DESARROLLO: USER SECRETS / AZURE: VARIABLES
+// ==========================================================
+
+if (string.IsNullOrWhiteSpace(
+    builder.Configuration.GetConnectionString("KernixERP")))
+{
+    throw new InvalidOperationException(
+        "Falta ConnectionStrings:KernixERP. Configura User Secrets o " +
+        "ConnectionStrings__KernixERP en Azure App Service.");
+}
 
 // ==========================================================
 // SEGURIDAD - AUTENTICACIÓN
@@ -519,6 +528,10 @@ builder.Services.AddAuthorization();
 // CORS
 // ==========================================================
 
+var originsProduccion = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -534,11 +547,12 @@ builder.Services.AddCors(options =>
             }
             else
             {
-                policy
-                    .WithOrigins(
-                        "https://erp.kernix.pe")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
+                if (originsProduccion.Length > 0)
+                {
+                    policy.WithOrigins(originsProduccion);
+                }
+
+                policy.AllowAnyHeader().AllowAnyMethod();
             }
         });
 });
@@ -581,6 +595,14 @@ app.UseCors("KernixERPPolicy");
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+// Salud del proceso HTTP. No consulta SQL ni expone credenciales.
+app.MapGet("/health", () => Results.Ok(new
+{
+    servicio = "KerniX ERP API",
+    estado = "Disponible",
+    entorno = app.Environment.EnvironmentName
+})).AllowAnonymous();
 
 app.MapControllers();
 
